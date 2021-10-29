@@ -1,15 +1,15 @@
 LO - flipped username to email in User model need to flip elsewhere in the AM
-- configure backend rest endpoints
-- setup encryption from front to back
-- DB SSL?
-- CSRF tokens?
-- sql injection must used named parameter jdbcTemplate
-- auth header?
-- javascript obfuscation and minimazation
+- setup http auth header
+- encrypt application.properties
+- DB SSL
+- javascript obfuscation and minimazation turn on
 - create docker container
-- setup spring boot and angular to run simultaneously
+- deploy app in docker container
+- deploy db in docker container
 - write tests (some unit some postman)
 - setup liquibase
+
+- write real README
 
 
 

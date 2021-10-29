@@ -1,0 +1,6 @@
+docker build --tag paul-backend-test-1-docker .
+docker run -it --entrypoint /bin/bash paul-backend-test-1-docker
+
+
+#hmmm one docker image or multiple that is the question, obviously seperate for app and db would be better for long term
+docker run --publish 8443:8443 -it --entrypoint /bin/bash paul-backend-test-1-docker
