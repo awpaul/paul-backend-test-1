@@ -1,5 +1,9 @@
 .gradle
+.idea
 /build/
+/src/main/webapp/ng-frontend/dist
+/src/main/webapp/ng-frontend/node_modules
+
 
 # Ignore Gradle GUI config
 gradle-app.setting
