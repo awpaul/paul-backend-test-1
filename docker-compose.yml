@@ -1,7 +1,32 @@
 version: "3.9"
 services:
+  backend_mysql:
+    image: "mysql:8.0"
+    secrets:
+      - db_root_password
+      - db_dba_password
+    restart: always
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_DATABASE: paul
+      MYSQL_USER: adam
+      MYSQL_PASSWORD_FILE: /run/secrets/db_dba_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      #MYSQL_PASSWORD: /run/secrets/db_dba_password
+      #MYSQL_ROOT_PASSWORD: /run/secrets/db_root_password
+      #MYSQL_PASSWORD: bvU3t7vfXXxXBt7s
+      #MYSQL_ROOT_PASSWORD: Calvin!2793
   web:
     build: .
+    restart: always
     ports:
-      - "8443"
-  mysql:
+      - 8443:8443
+    depends_on:
+      - backend_mysql
+
+secrets:
+  db_dba_password:
+    file: ./secrets/db_dba_password.txt
+  db_root_password:
+    file: ./secrets/db_root_password.txt
