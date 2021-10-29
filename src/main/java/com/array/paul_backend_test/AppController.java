@@ -2,6 +2,7 @@ package com.array.paul_backend_test;
 
 import com.array.paul_backend_test.db.User;
 import com.array.paul_backend_test.db.UserRepository;
+import com.array.paul_backend_test.rest.BackendAuthProvider;
 import com.array.paul_backend_test.rest.JsonResponse;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +10,14 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 public class AppController {
+    @Autowired
+    BackendAuthProvider backendAuthProvider;
     @Autowired
     private UserRepository userRepo;
 
@@ -38,6 +42,8 @@ public class AppController {
         if (dbUser!=null) {
             if (BCrypt.checkpw(decodedPassword, dbUser.getPassword())) {
                 response.setSuccess(true);
+                response.addData("creds",dbUser.getPassword());
+                dbUser.setPassword("");
                 response.addData("user",dbUser);
             } else {
                 response.setError("Incorrect email or password!");
@@ -49,7 +55,7 @@ public class AppController {
     }
 
     @GetMapping("/rest/allUsers")
-    public JsonResponse getAllUsers() {
+    public JsonResponse getAllUsers(HttpServletRequest request) {
         JsonResponse response = new JsonResponse();
         List<User> users = userRepo.findAll();
         //remove all passwords being set to frontend
@@ -61,52 +67,66 @@ public class AppController {
         return response;
     }
     @GetMapping("/rest/getUserById/{id}")
-    public JsonResponse getUserById(@PathVariable("id") Long id) {
+    public JsonResponse getUserById(HttpServletRequest request,@PathVariable("id") Long id) {
         JsonResponse response = new JsonResponse();
-        Optional<User> dbUser = userRepo.findById(id);
-        if (dbUser.isPresent()) {
-            User user = dbUser.get();
-            user.setPassword("");
-            response.setSuccess(true);
-            response.addData("user",user);
+        if (authenticate(request)) {
+            Optional<User> dbUser = userRepo.findById(id);
+            if (dbUser.isPresent()) {
+                User user = dbUser.get();
+                user.setPassword("");
+                response.setSuccess(true);
+                response.addData("user",user);
+            }
+        } else {
+            response.setError("Unauthorized!");
         }
         return response;
     }
 
     @PostMapping("/rest/updateUser/{id}")
-    public JsonResponse updateUser(@PathVariable("id") Long id,@RequestBody User user) {
+    public JsonResponse updateUser(HttpServletRequest request,@PathVariable("id") Long id, @RequestBody User user) {
         JsonResponse response = new JsonResponse();
-        Optional<User> dbUser = userRepo.findById(id);
-        if (dbUser.isPresent()) {
-            User userToUpdate = dbUser.get();
-            if (user.getPassword().length()>1) {
-                //decode and recode password
-                String decodedPassword = new String(Base64.decodeBase64(user.getPassword().getBytes()));
-                BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-                userToUpdate.setPassword(passwordEncoder.encode(decodedPassword));
+        if (authenticate(request)) {
+            Optional<User> dbUser = userRepo.findById(id);
+            if (dbUser.isPresent()) {
+                User userToUpdate = dbUser.get();
+                if (user.getPassword().length()>1) {
+                    //decode and recode password
+                    String decodedPassword = new String(Base64.decodeBase64(user.getPassword().getBytes()));
+                    BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+                    userToUpdate.setPassword(passwordEncoder.encode(decodedPassword));
+                }
+                userToUpdate.setFirstName(user.getFirstName());
+                userToUpdate.setLastName(user.getLastName());
+                userToUpdate.setEmail(user.getEmail());
+                userRepo.save(userToUpdate);
+                response.setSuccess(true);
+                response.addData("user",userToUpdate);
             }
-            userToUpdate.setFirstName(user.getFirstName());
-            userToUpdate.setLastName(user.getLastName());
-            userToUpdate.setEmail(user.getEmail());
-            userRepo.save(userToUpdate);
-            response.setSuccess(true);
-            response.addData("user",userToUpdate);
+        } else {
+            response.setError("Unauthorized!");
         }
         return response;
     }
 
 
     @DeleteMapping("/rest/deleteUser/{id}")
-    public JsonResponse deleteUser(@PathVariable("id") Long id) {
+    public JsonResponse deleteUser(HttpServletRequest request,@PathVariable("id") Long id) {
         JsonResponse response = new JsonResponse();
-
-        userRepo.deleteById(id);
-        response.addData("userId",id);
-        if (!userRepo.findById(id).isPresent()) {
-            response.setSuccess(true);
+        if (authenticate(request)) {
+            userRepo.deleteById(id);
+            response.addData("userId",id);
+            if (!userRepo.findById(id).isPresent()) {
+                response.setSuccess(true);
+            }
+        } else {
+            response.setError("Unauthorized!");
         }
-
         return response;
+    }
+
+    public boolean authenticate(HttpServletRequest request) {
+        return backendAuthProvider.authenticateUser(request.getHeader("app_uid"),request.getHeader("Authorization"));
     }
 
 

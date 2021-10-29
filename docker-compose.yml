@@ -27,6 +27,6 @@ services:
 
 secrets:
   db_dba_password:
-    file: ./secrets/db_dba_password.txt
+    file: ./../secrets/db_dba_password.txt
   db_root_password:
-    file: ./secrets/db_root_password.txt
+    file: ./../secrets/db_root_password.txt

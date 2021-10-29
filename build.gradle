@@ -32,7 +32,8 @@ task npmInstall(type:Exec) {
 task npmBuildProd(type:Exec, dependsOn:'npmInstall') {
     workingDir = "${npmHome}"
     if(Os.isFamily(Os.FAMILY_WINDOWS)) {
-        commandLine 'npm.cmd','run','buildProd'
+        /*TODO Revert to PROD build*/
+        commandLine 'npm.cmd','run','build'
     } else {
         commandLine 'npm','run','buildProd'
     }

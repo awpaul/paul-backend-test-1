@@ -11,7 +11,6 @@ import { User } from '@app/_models';
 export class AccountService {
     private userSubject: BehaviorSubject<User>;
     public user: Observable<User>;
-
     constructor(
         private router: Router,
         private http: HttpClient
@@ -31,9 +30,9 @@ export class AccountService {
         return this.http.post<any>('/rest/user/login', { email, password})
             .pipe(map(x => {
             if (x.success) {
+                localStorage.setItem('creds',x.dataMap.creds);
                 localStorage.setItem('user', JSON.stringify(x.dataMap.user));
                 this.userSubject.next(x.dataMap.user);
-
             }
             return x;
                 // store user details and jwt token in local storage to keep user logged in between page refreshes
@@ -45,6 +44,7 @@ export class AccountService {
     logout() {
         // remove user from local storage and set current user to null
         localStorage.removeItem('user');
+        localStorage.removeItem('creds');
         this.userSubject.next(null);
         this.router.navigate(['/account/login']);
     }
